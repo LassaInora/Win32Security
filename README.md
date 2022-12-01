@@ -18,7 +18,6 @@ Version:
 ## Summary
 
 - **[Links](#links)**
-- **[Contacts](#contacts)**
 - **[Methods](#methods)**
 --------
 
@@ -87,41 +86,40 @@ Version:
   This should look like this:
 
   ```python
-from Win32Security import *
-  
-  
-# <class>
-class __YourClassName__(Params):
-  """Settings of YourClassName"""
-  
-  def __init__(self):
-    self.YOURVARIABLENAME = (type_of_variable, "Your variable")
-# </class>
-  
-
-# <class>
-class __ClassExample__(Params):
-  """Settings of YourSecondClassName"""
-  
-  def __init__(self):
-    self.DATA1 = (SecurityObject, "0a1b2c3d4e5f6g7h8i9j")  # Fake encrypted 'Banana'
-    self.DATA2 = (int, "42")
-    self.DATA3 = (str, "foo")
-# </class>
-  
-...
+    from Win32Security import *
+    
+    # <class>
+    class __YourClassName__(Params):
+        """Settings of YourClassName"""
+        
+        def __init__(self):
+            self.YOURVARIABLENAME = (type_of_variable, "Your variable")
+    # </class>
+    
+    
+    # <class>
+    class __ClassExample__(Params):
+        """Settings of YourSecondClassName"""
+        
+        def __init__(self):
+            self.DATA1 = (SecurityObject, "0a1b2c3d4e5f6g7h8i9j")  # Fake encrypted 'Banana'
+            self.DATA2 = (int, "42")
+            self.DATA3 = (str, "foo")
+    # </class>
+    
+    ...
   ```
   
   You can call its classes from your code normally, the value of their self will be the value of your variable transformed by the indicated class.
 If you use the SecurityObject class then the encrypted value in your file will be decrypted when used without modifying the current file.
   
   ```python
-obj = __ClassExample__().DATA1
-# obj -> 'Banana'
-obj = __ClassExample__().DATA2
-# obj -> 42
-obj = __ClassExample__().DATA3
-# obj -> 'foo'
+    obj = __ClassExample__().DATA1
+    # obj -> 'Banana'
+    obj = __ClassExample__().DATA2
+    # obj -> 42
+    obj = __ClassExample__().DATA3
+    # obj -> 'foo'
   ```
 
   In order to create, modify or see your data it is advisable to refer to `python -m Win32Security`
