@@ -60,7 +60,7 @@ class Class:
             self.name = name
             self.data = {}
         else:
-            self.name = data.split('class __')[1].split('__(Params):')[0]
+            self.name = data.split('class ')[1].split('__(Params):')[0]
             self.data = {}
 
             for line in data.split("def __init__(self):")[1].splitlines()[1:]:
@@ -78,11 +78,11 @@ class Class:
     def __str__(self):
         return f'''
 # <class>
-class __{self.name}__(Params):
-"""Settings of {self.name}"""
-
-def __init__(self):
-    {self.get_attributes()}
+class {self.name}__(Params):
+    """Settings of {self.name}"""
+    
+    def __init__(self):
+        {self.get_attributes()}
 # </class>
 '''
 

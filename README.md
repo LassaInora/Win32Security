@@ -12,7 +12,7 @@ License:
 
 Version:
 --------
-- `1.0.0`
+- `1.0.1`
 
 --------
 ## Summary
@@ -89,7 +89,7 @@ Version:
     from Win32Security import *
     
     # <class>
-    class __YourClassName__(Params):
+    class YourClassName__(Params):
         """Settings of YourClassName"""
         
         def __init__(self):
@@ -98,7 +98,7 @@ Version:
     
     
     # <class>
-    class __ClassExample__(Params):
+    class ClassExample__(Params):
         """Settings of YourSecondClassName"""
         
         def __init__(self):
@@ -114,11 +114,11 @@ Version:
 If you use the SecurityObject class then the encrypted value in your file will be decrypted when used without modifying the current file.
   
   ```python
-    obj = __ClassExample__().DATA1
+    obj = ClassExample__().DATA1
     # obj -> 'Banana'
-    obj = __ClassExample__().DATA2
+    obj = ClassExample__().DATA2
     # obj -> 42
-    obj = __ClassExample__().DATA3
+    obj = ClassExample__().DATA3
     # obj -> 'foo'
   ```
 
