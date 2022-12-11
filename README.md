@@ -50,13 +50,14 @@ Version:
   ```python
     from Win32Security import *
 
+
     def _get_data(data):
         if data[0] == SecurityObject:
           return data[0](data[1]).data
         else:
           return data[0](data[1])
     
-    # <class>
+        
     class YourClassName__:
         """Settings of YourClassName"""
         
@@ -65,10 +66,8 @@ Version:
         @property
         def YOURVARIABLENAME(self):
             return _get_data(self._YOURVARIABLENAME)
-    # </class>
     
     
-    # <class>
     class ClassExample__:
         """Settings of ClassExample"""
         
@@ -87,7 +86,6 @@ Version:
         @property
         def DATA1(self):
             return _get_data(self._DATA1)
-    # </class>
     
     ...
   ```
