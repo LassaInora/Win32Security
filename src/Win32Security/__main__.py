@@ -107,88 +107,86 @@ class MENU:
                 case 0: self._exit = True
                 case 1: self.view()
                 case 2: self.edit()
-                case 3: self.delete()
+                case 3:
+                    _clear()
+                    if LassaLib.menu(['YES', 'NO'], f'Delete {self.file.name}?') == 1 and os.path.exists(
+                            f'{self.file.path}{self.file.name}.py'):
+                        match os.name:
+                            case 'posix':
+                                os.system(f'rm {self.file.path}{self.file.name}.py')
+                            case 'nt':
+                                os.system(f'del {self.file.path}{self.file.name}.py')
+                    exit()
 
     def view(self):
-        run_view = True
-        while run_view:
+        exit_view = False
+        while not exit_view:
             class_ = self.select_class()
             if class_ is not None:
                 self.display_class(class_)
             else:
-                run_view = False
+                exit_view = True
 
     def edit(self):
-        run_edit = True
-        while run_edit:
+        exit_edit = False
+        while not exit_edit:
             _clear()
             match LassaLib.menu(
                 ['Add class', 'Edit class', 'Delete class'], f'Edit {self.file.name}',
                 can_back=True,
                 desc=f'{self.file.path}{self.file.name}.py'
             ):
-                case 0:
-                    run_edit = False
-                case 1:
-                    self.add_class()
-                case 2:
-                    self.edit_class()
+                case 0: exit_edit = True
+                case 1: self.file.classes.append(FILE.CLASS(f"class {input('Choose a name: ')}__:\n"))
+                case 2: self.edit_class()
                 case 3:
-                    self.delete_class()
-
-    def add_class(self):
-        self.file.classes.append(FILE.CLASS(f"class {input('Choose a name: ')}__:\n"))
+                    class_ = self.select_class()
+                    if class_ is not None:
+                        _clear()
+                        if LassaLib.menu(['YES', 'NO'], f'Delete {class_.name}?') == 1:
+                            self.file.classes.remove(class_)
 
     def edit_class(self):
         class_ = self.select_class()
         if class_ is not None:
-            _clear()
-            match LassaLib.menu([f'Rename {class_.name}', 'Add attribute', 'Edit attribute'], f'Edit {class_.name}', can_back=True):
-                case 1: class_.name = input('Choose a name: ')
-                case 2:
-                    name = input('Enter the name: ')
-                    type_ = input('Enter the type: ')
-                    if type_.lower() == 'secure' or type_.lower() == 'securityobject':
-                        type_ = 'SecurityObject'
-                    value = input('Enter the value: ') if type_ != 'SecurityObject' else SecurityObject(input('Enter the value'), encrypt=True).encrypted_data
-                    class_.attributes.append(FILE.CLASS.ATTR(f"{name} = ({type_}, \"{value}\")"))
-                case 3: self.edit_attribute(class_)
+            exit_edit_class = False
+            while not exit_edit_class:
+                _clear()
+                match LassaLib.menu([f'Rename {class_.name}', 'Add attribute', 'Edit attribute'], f'Edit {class_.name}', can_back=True):
+                    case 0: exit_edit_class = True
+                    case 1: class_.name = input('Choose a name: ')
+                    case 2:
+                        name = input('Enter the name: ')
+                        type_ = input('Enter the type: ')
+                        if type_.lower() == 'secure' or type_.lower() == 'securityobject':
+                            type_ = 'SecurityObject'
+                        value = input('Enter the value: ') if type_ != 'SecurityObject' else SecurityObject(input('Enter the value'), encrypt=True).encrypted_data
+                        class_.attributes.append(FILE.CLASS.ATTR(f"{name} = ({type_}, \"{value}\")"))
+                    case 3: self.edit_attribute(class_)
 
     def edit_attribute(self, class_):
         attr_ = self.select_attributes(class_)
         if attr_ is not None:
-            _clear()
-            match LassaLib.menu([f'Rename {attr_.name}', 'Change type', 'Change value'], f'Edit {class_.name}.{attr_.name}', can_back=True):
-                case 1: attr_.name = input('Choose a name: ')
-                case 2:
-                    if attr_.type == 'SecurityObject':
-                        attr_.value = SecurityObject(attr_.value).data
-                    attr_.type = input('Enter a type: ')
-                    if attr_.type.lower() == 'secure' or attr_.type.lower() == 'securityobject':
-                        attr_.type = 'SecurityObject'
-                    if attr_.type == 'SecurityObject':
-                        attr_.value = SecurityObject(attr_.value, encrypt=True)
-                case 3:
-                    attr_.value = input('Enter the new value: ')
-                    if attr_.type == 'SecurityObject':
-                        attr_.value = SecurityObject(attr_.value, encrypt=True)
+            exit_edit_attribute = False
+            while not exit_edit_attribute:
+                _clear()
+                match LassaLib.menu([f'Rename {attr_.name}', 'Change type', 'Change value'], f'Edit {class_.name}.{attr_.name}', can_back=True):
+                    case 0: exit_edit_attribute = True
+                    case 1: self.set_var(attr_, input('Choose a name: '), attr_.type, attr_.value)
+                    case 2: self.set_var(attr_, attr_.name, input('Enter a type: '), attr_.value)
+                    case 3: self.set_var(attr_, attr_.name, attr_.type, input('Enter the new value: '))
 
-    def delete_class(self):
-        class_ = self.select_class()
-        if class_ is not None:
-            _clear()
-            if LassaLib.menu(['YES', 'NO'], f'Delete {class_.name}?') == 1:
-                self.file.classes.remove(class_)
+    @classmethod
+    def set_var(cls, attr, name, type, value):
+        if type.lower() == 'secure' or type.lower() == 'securityobject':
+            type = 'SecurityObject'
 
-    def delete(self):
-        _clear()
-        if LassaLib.menu(['YES', 'NO'], f'Delete {self.file.name}?') == 1 and os.path.exists(f'{self.file.path}{self.file.name}.py'):
-            match os.name:
-                case 'posix':
-                    os.system(f'rm {self.file.path}{self.file.name}.py')
-                case 'nt':
-                    os.system(f'del {self.file.path}{self.file.name}.py')
-        exit()
+        if type == 'SecurityObject':
+            value = SecurityObject(value, encrypt=True).encrypted_data
+
+        attr.name = name
+        attr.type = type
+        attr.value = str(value)
 
     def select_class(self):
         _clear()
