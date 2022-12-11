@@ -61,14 +61,3 @@ class SecurityObject:
     @encrypted_data.setter
     def encrypted_data(self, data):
         self._data = data
-
-
-class Params:
-    def __getattribute__(self, item):
-        value = super().__getattribute__(item)
-        return value[0](value[1])
-
-    def __setattr__(self, key, value):
-        if not (isinstance(value, list) and isinstance(value[0], type) and len(value) == 2):
-            value = [type(getattr(self, key)), value]
-        super().__setattr__(key, value)

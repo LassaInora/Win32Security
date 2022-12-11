@@ -12,7 +12,7 @@ License:
 
 Version:
 --------
-- `1.0.1`
+- `2.0.0`
 
 --------
 ## Summary
@@ -31,45 +31,7 @@ Version:
 --------
 ## Methods
 
-- ### python -m Win32Security \<command> \[options]
-  - help
-    ```
-    Usage:
-        python.exe -m Win32Security <command> [options]
-      
-    Commands:
-        view            Checks class data of the configuration file set in parameter
-        edit            Edit the configuration file set in parameter
-        create          Create a configuration file named by default 'settings.py'
-      
-    General Options:
-        -h, --help      Show help.
-    
-  - view
-    ```
-    Usage:
-        python.exe -m Win32Security view <path of file>
-    
-    General Options:
-        -h, --help      Show help.
-    
-  - edit
-    ```
-    Usage:
-        python.exe -m Win32Security edit <path of file>
-    
-    General Options:
-        -h, --help      Show help.
-    
-  - create
-    ```
-    Usage:
-        python.exe -m Win32Security create [options]
-    
-    General Options:
-        -h, --help      Show help.
-        -n, --name      Name of the file.
-        -f, --folder    Folder of the file.
+ Execution: python -m Win32Security {path}
     
 - ### import Win32Security
   - #### class SecurityObject
@@ -89,22 +51,48 @@ Version:
     from Win32Security import *
     
     # <class>
-    class YourClassName__(Params):
+    class YourClassName__:
         """Settings of YourClassName"""
         
-        def __init__(self):
-            self.YOURVARIABLENAME = (type_of_variable, "Your variable")
+        _YOURVARIABLENAME = (type_of_variable, "Your variable")
+        
+        @property
+        def YOURVARIABLENAME(self):
+            if isinstance(self._YOURVARIABLENAME[0], SecurityObject):
+              return self._YOURVARIABLENAME[0](self._YOURVARIABLENAME[1]).data
+            else:
+              return self._YOURVARIABLENAME[0](self._YOURVARIABLENAME[1])
     # </class>
     
     
     # <class>
-    class ClassExample__(Params):
+    class ClassExample__:
         """Settings of YourSecondClassName"""
         
-        def __init__(self):
-            self.DATA1 = (SecurityObject, "0a1b2c3d4e5f6g7h8i9j")  # Fake encrypted 'Banana'
-            self.DATA2 = (int, "42")
-            self.DATA3 = (str, "foo")
+        _DATA1 = (SecurityObject, "0a1b2c3d4e5f6g7h8i9j")  # Fake encrypted 'Banana'
+        _DATA2 = (int, "42")
+        _DATA3 = (str, "foo")
+        
+        @property
+        def DATA3(self):
+            if isinstance(self._DATA3[0], SecurityObject):
+              return self._DATA3[0](self._DATA3[1]).data
+            else:
+              return self._DATA3[0](self._DATA3[1])
+        
+        @property
+        def DATA2(self):
+            if isinstance(self._DATA2[0], SecurityObject):
+              return self._DATA2[0](self._DATA2[1]).data
+            else:
+              return self._DATA2[0](self._DATA2[1])
+        
+        @property
+        def DATA1(self):
+            if isinstance(self._DATA1[0], SecurityObject):
+              return self._DATA1[0](self._DATA1[1]).data
+            else:
+              return self._DATA1[0](self._DATA1[1])
     # </class>
     
     ...

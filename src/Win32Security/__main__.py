@@ -1,341 +1,305 @@
 import os
 import sys
+from enum import Enum
 
 import LassaLib
 
 from Win32Security import SecurityObject
 
-_types = {
-    "SecurityObject": SecurityObject,
-    "str": str,
-    "int": int,
-    "float": float,
-    "bool": bool,
-    "list": list,
-    "tuple": tuple,
-    "dict": dict,
-}
 
-_commands = {
-    'view': """Usage:
-    python.exe -m Win32Security view <path of file>
-    
-General Options:
-    -h, --help      Show help.
-""",
-    'edit': """Usage:
-    python.exe -m Win32Security edit <path of file>
-    
-General Options:
-    -h, --help      Show help.
-""",
-    'create': """Usage:
-    python.exe -m Win32Security create [options]
-    
-General Options:
-    -h, --help      Show help.
-    -n, --name      Name of the file.
-    -f, --folder    Folder of the file.
-""",
-    '_': """Usage:
-    python.exe -m Win32Security <command> [options]
-    
-Commands:
-    view            Checks class data of the configuration file set in parameter
-    edit            Edit the configuration file set in parameter
-    create          Create a configuration file named by default 'settings.py'
-    
-General Options:
-    -h, --help      Show help.
-""",
-}
+class FILE:
+    class CLASS:
+        class ATTR:
+            def __init__(self, data: str):
+                self.data = data.splitlines()[0]
+                self.name = (self.data.split(' = ')[0])
+                self.type = self.data.split(' = ')[1][1:-1].split(', ')[0]
+                self.value = self.data.split(' = ')[1][1:-1].split(', ')[1][1:-1]
 
+            def get_set(self):
+                return f'    _{self.name.upper()} = ({self.type}, "{self.value}")'
 
-class Class:
-    def __init__(self, data=..., *, name=...):
-        if data is ... and name is ...:
-            raise AttributeError("No attribute")
+            def get_property(self):
+                return f"\n    @property\n    def {self.name.upper()}(self):\n        return self._{self.name.upper()}[0](self._{self.name.upper()}[1])\n"
 
-        if data is ...:
-            self.name = name
-            self.data = {}
-        else:
-            self.name = data.split('class ')[1].split('__(Params):')[0]
-            self.data = {}
+        def __init__(self, data: str):
+            self.data = '\n'.join(data.splitlines()[3:])
+            self.name = data.splitlines()[0][6:-3]
+            self.attributes = self.get_attributes()
 
-            for line in data.split("def __init__(self):")[1].splitlines()[1:]:
-                try:
-                    line: str
-                    name, value = line.split('self.')[1].split(' = ')
-                    type_, value = value[1:-1].split(', ')
-                    self.data[name] = (type_, value[1:-1])
-                except IndexError:
-                    pass
-
-    def get_attributes(self):
-        return f"\n        ".join([f'self.{key} = ({value[0]}, "{value[1]}")' for key, value in self.data.items()])
-
-    def __str__(self):
-        return f'''
-# <class>
-class {self.name}__(Params):
-    """Settings of {self.name}"""
-    
-    def __init__(self):
-        {self.get_attributes()}
-# </class>
-'''
-
-
-def help(command=...):
-    if command is ... or command not in _commands:
-        command = '_'
-
-    print(_commands[command])
-
-
-def edit(path):
-    """Edit the configuration file set in parameter
-
-    Parameters:
-         path (str):  Path of file.
-    """
-
-    data = open(path, 'r').read()
-
-    classes = [Class(class_) for class_ in [class_.split("# </class>")[0] for class_ in data.split('# <class>')[1:]]]
-
-    run = True
-    while run:
-        os.system('CLS')
-        print()
-        chx = LassaLib.menu(
-            ["Create new class"] + [c.name for c in classes], "Choice of class",
-            can_back=True,
-            desc="Choose your class to work on.\nAuto-save on exit"
-        )
-
-        match chx:
-            case 0:
-                run = False
-            case 1:
-                classes.append(Class(name=input("Class name: ").capitalize()))
-            case _:
-                class_ = classes[chx - 2]
-                os.system('CLS')
-                print()
-                chx2 = LassaLib.menu(
-                    ["Rename class", "Delete class", "Create new attribute"] + list(class_.data), f"Menu {class_.name}",
-                    can_back=True
-                )
-                match chx2:
-                    case 0:
-                        pass
-                    case 1:
-                        new_name = input("New name: ").capitalize()
-                        if LassaLib.enter(f"Rename {class_.name} for {new_name}?\n >> ", bool):
-                            class_.name = new_name
-                    case 2:
-                        if LassaLib.enter(f"Are you sure you want to delete {class_.name}?\n >> ", bool):
-                            classes.remove(class_)
-                    case 3:
-                        os.system('CLS')
-                        print()
-                        chx3 = LassaLib.menu(
-                            _types, f"Menu create new attribute",
-                            can_back=True,
-                            desc="Choose your type"
-                        )
-                        if chx3 == 0:
-                            break
-                        else:
-                            chx3 -= 1
-                        type_ = _types[list(_types)[chx3]].__name__
-                        name = input("Choose the name: ").upper()
-                        value = input(f"Value of {name}: ")
-                        if type_ == 'SecurityObject':
-                            value = SecurityObject(value, True).encrypted_data
-                        class_.data[name] = (type_, value)
-                    case _:
-                        attr_ = list(class_.data.keys())[chx2 - 4]
-                        os.system('CLS')
-                        print()
-                        chx3 = LassaLib.menu(
-                            [
-                                f"Rename {attr_}",
-                                f"Change {attr_}",
-                                f"Delete {attr_}"
-                            ], f"Menu {class_.name}.{attr_}",
-                            can_back=True
-                        )
-                        match chx3:
-                            case 0:
-                                pass
-                            case 1:
-                                new_name = input("New name: ").upper()
-                                if LassaLib.enter(f"Rename {attr_} for {new_name}?\n >> ", bool):
-                                    class_.data[new_name] = class_.data[attr_]
-                                    del class_.data[attr_]
-                            case 2:
-                                os.system('CLS')
-                                print()
-                                chx4 = LassaLib.menu(
-                                    _types, f"Menu change attribute",
-                                    can_back=True,
-                                    desc="Choose your type"
-                                )
-                                if chx4 == 0:
-                                    break
-                                else:
-                                    chx4 -= 1
-                                type_ = list(_types.values())[chx4].__name__
-                                value = input(f"Value of {attr_}: ")
-                                if type_ == 'SecurityObject':
-                                    value = SecurityObject(value, True).encrypted_data
-                                class_.data[attr_] = (type_, value)
-                            case 3:
-                                if LassaLib.enter(f"Are you sure you want to delete {class_.name}.{attr_}?\n >> ",
-                                                  bool):
-                                    del class_.data[attr_]
-
-    doc = "from Win32Security import *\n\n"
-    print("Save...", end='')
-    try:
-        for class_ in classes:
-            doc += "\n" + str(class_)
-        open(path, 'w').write(doc)
-        print(f"OK : {path}")
-    except Exception as e:
-        print(f"KO : {e}")
-
-
-def create(name, folder):
-    """Create a configuration file named by default 'settings.py'
-
-    Parameters:
-        name (str): Name of the file.
-        folder (str): Folder of the file.
-    """
-    if not name.endswith('.py'):
-        name += '.py'
-    open(f"{folder}/{name}", 'w').write('')
-    edit(f"{folder}/{name}")
-
-
-def view(path):
-    """Checks class data of the configuration file set in parameter
-
-    Parameters:
-         path (str):  Path of file.
-    """
-
-    class Viewer:
-        def __init__(self, class_):
-            self._class: Class = class_
+        def get_attributes(self):
+            return [self.ATTR(attribute) for attribute in self.data.split('    _')[1:]]
 
         def __str__(self):
-            return (
-                    "  " + ("╔═" + "═" * len(self._class.name) + "═╗").center(self.max_length - 4) + "  " + "\n" +
-                    "╔═" + f"╣ {self._class.name} ╠".center(self.max_length - 4, '═') + "═╗" + "\n" +
-                    "║ " + ("╚═" + "═" * len(self._class.name) + "═╝").center(self.max_length - 4) + " ║" + "\n"
-            ) + ''.join(self.make(key, value) for key, value in self._class.data.items()) + (
-                    "╚" + "═" * (self.max_length - 2) + "╝" + "\n\n" +
-                    "(Press enter for continue.)"
-            )
+            attrs = ""
+            for attr in self.attributes:
+                attrs = attr.get_set() + "\n" + attrs
+                attrs += attr.get_property()
 
-        def make(self, key, value):
-            value = str(_types[value[0]](value[1]))
-            return (
-                    "║ " + "┌─" + "─" * self.length_var + "─┐ ┌─" + "─" * self.length_value + "─┐" + " ║" + "\n" +
-                    "║ " + f"│ {key.center(self.length_var)} ├─┤ {value.center(self.length_value)} │" + " ║" + "\n" +
-                    "║ " + "└─" + "─" * self.length_var + "─┘ └─" + "─" * self.length_value + "─┘" + " ║" + "\n"
-            )
+            return f'class {self.name}__:\n    """Settings of {self.name}"""\n\n' + attrs
 
-        @property
-        def length_title(self):
-            return len(f"╔══╣ {self._class.name} ╠══╗")
+    def __init__(self, name: str):
+        name = name.replace('\\', '/')
+        if '/' in name:
+            self.path = '/'.join(name.split('/')[:-1]) + '/'
+            self.name = '.'.join(name.split('/')[-1].split('.')[:-1]) if '.' in name.split('/')[-1] else name.split('/')[-1]
+        else:
+            self.path = ''
+            self.name = '.'.join(name.split('.')[:-1]) if '.' in name else name
+        try:
+            self.data = open(self.path + self.name + '.py', 'r').read()
+        except FileNotFoundError:
+            self.data = ''
+        self.classes = self.get_classes()
 
-        @property
-        def length_var(self):
-            return max(len(key) for key in self._class.data)
+    def get_classes(self):
+        return [self.CLASS('class ' + class_) for class_ in self.data.split('class ')[1:]]
 
-        @property
-        def length_value(self):
-            return max(len(str(_types[val[0]](val[1]))) for val in self._class.data.values())
+    def __str__(self):
+        return "from Win32Security import SecurityObject\n\n\n" + '\n\n'.join(str(class_) for class_ in self.classes)
 
-        @property
-        def length_data(self):
-            return len("║ │ " + "*"*self.length_var + " ├─┤ " + "*"*self.length_value + " │ ║")
-
-        @property
-        def max_length(self):
-            return max(self.length_title, self.length_data)
+    def save(self):
+        open(self.path + self.name + '.py', 'w').write(str(self))
+        print(self.name + '.py has been saved.')
 
 
-    data = open(path, 'r').read()
+class MENU:
+    class MODE(Enum):
+        EDIT = 0
+        VIEW = 1
 
-    classes = [Class(class_) for class_ in [class_.split("# </class>")[0] for class_ in data.split('# <class>')[1:]]]
+    def __init__(self, file):
+        """Execute Menu for file
 
-    run = True
-    while run:
-        os.system('CLS')
-        print()
-        chx = LassaLib.menu(
-            [c.name for c in classes], "View a class",
+        Parameters:
+            file (str or FILE): The file
+        """
+        if isinstance(file, str):
+            file = FILE(file)
+
+        self.file: FILE = file
+        self._exit = False
+
+    def home(self):
+        self._exit = False
+        while not self._exit:
+            _clear()
+            match LassaLib.menu(
+                ['VIEW', 'EDIT', 'DELETE'], f'{self.file.name} Home',
+                can_back=True,
+                desc=f'{self.file.path}{self.file.name}.py'
+            ):
+                case 0: self._exit = True
+                case 1: self.view()
+                case 2: self.edit()
+                case 3: self.delete()
+
+    def view(self):
+        run_view = True
+        while run_view:
+            class_ = self.select_class()
+            if class_ is not None:
+                self.display_class(class_)
+            else:
+                run_view = False
+
+    def edit(self):
+        run_edit = True
+        while run_edit:
+            _clear()
+            match LassaLib.menu(
+                ['Add class', 'Edit class', 'Delete class'], f'Edit {self.file.name}',
+                can_back=True,
+                desc=f'{self.file.path}{self.file.name}.py'
+            ):
+                case 0:
+                    run_edit = False
+                case 1:
+                    self.add_class()
+                case 2:
+                    self.edit_class()
+                case 3:
+                    self.delete_class()
+
+    def add_class(self):
+        self.file.classes.append(FILE.CLASS(f"class {input('Choose a name: ')}__:\n"))
+
+    def edit_class(self):
+        class_ = self.select_class()
+        if class_ is not None:
+            _clear()
+            match LassaLib.menu([f'Rename {class_.name}', 'Add attribute', 'Edit attribute'], f'Edit {class_.name}', can_back=True):
+                case 1: class_.name = input('Choose a name: ')
+                case 2:
+                    name = input('Enter the name: ')
+                    type_ = input('Enter the type: ')
+                    if type_ == 'Secure':
+                        type_ = 'SecurityObject'
+                    value = input('Enter the value: ') if type_ != 'SecurityObject' else SecurityObject(input('Enter the value'), encrypt=True).encrypted_data
+                    class_.attributes.append(FILE.CLASS.ATTR(f"{name} = ({type_}, \"{value}\")"))
+                case 3: self.edit_attribute(class_)
+
+    def edit_attribute(self, class_):
+        attr_ = self.select_attributes(class_)
+        if attr_ is not None:
+            _clear()
+            match LassaLib.menu([f'Rename {attr_.name}', 'Change type', 'Change value'], f'Edit {class_.name}.{attr_.name}', can_back=True):
+                case 1: attr_.name = input('Choose a name: ')
+                case 2:
+                    if attr_.type == 'SecurityObject':
+                        attr_.value = SecurityObject(attr_.value).data
+                    attr_.type = input('Enter a type: ')
+                    if attr_.type == 'SecurityObject':
+                        attr_.value = SecurityObject(attr_.value, encrypt=True)
+                case 3:
+                    attr_.value = input('Enter the new value: ')
+                    if attr_.type == 'SecurityObject':
+                        attr_.value = SecurityObject(attr_.value, encrypt=True)
+
+    def delete_class(self):
+        class_ = self.select_class()
+        if class_ is not None:
+            _clear()
+            if LassaLib.menu(['YES', 'NO'], f'Delete {class_.name}?') == 1:
+                self.file.classes.remove(class_)
+
+    def delete(self):
+        _clear()
+        if LassaLib.menu(['YES', 'NO'], f'Delete {self.file.name}?') == 1 and os.path.exists(f'{self.file.path}{self.file.name}.py'):
+            match os.name:
+                case 'posix':
+                    os.system(f'rm {self.file.path}{self.file.name}.py')
+                case 'nt':
+                    os.system(f'del {self.file.path}{self.file.name}.py')
+        exit()
+
+    def select_class(self):
+        _clear()
+        res = LassaLib.menu(
+            [class_.name for class_ in self.file.classes], 'Choose a class',
             can_back=True
         )
+        if res == 0:
+            return None
+        else:
+            return self.file.classes[res - 1]
 
-        match chx:
-            case 0:
-                run = False
-            case _:
-                os.system('CLS')
-                print()
-                input(str(Viewer(classes[chx - 1])))
+    def select_attributes(self, class_=None):
+        if class_ is None:
+            class_ = self.select_class()
+        if class_ is not None:
+            _clear()
+            res = LassaLib.menu(
+                [attr.name for attr in class_.attributes], 'Choose an attribute',
+                can_back=True
+            )
+            if res != 0:
+                return class_.attributes[res - 1]
+        return None
+
+    def run(self):
+        self.home()
+        self.file.save()
+
+    def display_class(self, class_=None):
+        """ Display class
+
+        Parameters:
+            class_ (FILE.CLASS): The class
+        """
+        """ Model:
+             ╔══════════════╗         
+    ╔════════╣  class name  ╠════════╗
+    ║        ╚══════════════╝        ║
+    ║    ┌──────────────────────┐    ║
+    ║    │  Settings of class   │    ║
+    ║    └──────────────────────┘    ║
+    ║                                ║
+    ║ ┌──────┐ ┌─────┐ ┌───────────┐ ║
+    ║ │ VAR1 ├─┤ int ├─┤  VALUE 1  │ ║
+    ║ └──────┘ └─────┘ └───────────┘ ║
+    ║ ┌──────┐ ┌─────┐ ┌───────────┐ ║
+    ║ │ VAR1 ├─┤ str ├─┤  VALUE 2  │ ║
+    ║ └──────┘ └─────┘ └───────────┘ ║
+    ╟--------------------------------╢
+    ║  ┌──────────────────────────┐  ║
+    ║  │   Press enter to exit    │  ║
+    ║  └──────────────────────────┘  ║
+    ╚════════════════════════════════╝
+        """
+        if class_ is None:
+            class_ = self.select_class()
+        if class_ is not None:
+            max_name, max_type, max_value = 0, 0, 0
+            for attr in class_.attributes:
+                if attr.type == 'SecurityObject':
+                    value = SecurityObject(attr.value).data
+                else:
+                    value = attr.value
+                if len(value) > 100:
+                    value = value[:97] + '...'
+                max_name = max(max_name, len(attr.name))
+                max_type = max(max_type, len(attr.type))
+                max_value = max(max_value, len(value))
+
+            max_length = max(
+                len(f"╔══╣  {class_.name}  ╠══╗"),
+                len(f"║   │  Settings of {class_.name}   │    ║"),
+                len(f"║ │ {'*' * max_name} ├─┤ {'*' * max_type} ├─┤ {'*' * max_value} │ ║")
+            )
+            val_length = max_value + (max_length - len(f"║ │ {'*' * max_name} ├─┤ {'*' * max_type} ├─┤ {'*' * max_value} │ ║"))
+
+            bloc = ""
+
+            bloc += (f"╔══{'═'*len(class_.name)}══╗".center(max_length, ' ')) + "\n"
+            bloc += ("╔══" + f"╣  {class_.name}  ╠".center(max_length - 6, '═') + "══╗") + "\n"
+            bloc += ("║  " + f"╚══{'═'*len(class_.name)}══╝".center(max_length - 6, ' ') + "  ║") + "\n"
+            var = max_length - len(f"║ │  Settings of {class_.name}  │ ║")
+            part = [
+                var // 4 + (1 if var % 4 > 0 else 0),
+                var // 4 + (1 if var % 4 > 1 else 0),
+                var // 4 + (1 if var % 4 > 2 else 0),
+                var // 4
+            ]
+            bloc += ("║ " + " "*part[0] + "┌─" + "─"*part[1] + f"─────────────{'─'*len(class_.name)}─" + "─"*part[2] + "─┐" + " "*part[3] + " ║") + "\n"
+            bloc += ("║ " + " "*part[0] + "│ " + " "*part[1] + f" Settings of {class_.name} " + " "*part[2] + " │" + " "*part[3] + " ║") + "\n"
+            bloc += ("║ " + " "*part[0] + "└─" + "─"*part[1] + f"─────────────{'─'*len(class_.name)}─" + "─"*part[2] + "─┘" + " "*part[3] + " ║") + "\n"
+            bloc += ('║' + ' '*(max_length - 2) + '║') + "\n"
+            for attr in class_.attributes:
+                if attr.type == 'SecurityObject':
+                    value = SecurityObject(attr.value).data
+                else:
+                    value = attr.value
+                if len(value) > 100:
+                    value = value[:97] + '...'
+                bloc += f"║ ┌─{'─' * max_name}─┐ ┌─{'─' * max_type}─┐ ┌─{'─' * val_length}─┐ ║" + "\n"
+                bloc += f"║ │ {attr.name.center(max_name, ' ')} ├─┤ {attr.type.center(max_type, ' ')} ├─┤ {LassaLib.position('LEFT', value, val_length, ' ')} │ ║" + "\n"
+                bloc += f"║ └─{'─' * max_name}─┘ └─{'─' * max_type}─┘ └─{'─' * val_length}─┘ ║" + "\n"
+            bloc += ('╟' + '-'*(max_length - 2) + '╢') + "\n"
+            part = [
+                (max_length - 29) // 4 + (1 if (max_length - 29) % 4 > 0 else 0),
+                (max_length - 29) // 4 + (1 if (max_length - 29) % 4 > 1 else 0),
+                (max_length - 29) // 4 + (1 if (max_length - 29) % 4 > 2 else 0),
+                (max_length - 29) // 4
+            ]
+            bloc += ("║ " + " "*part[0] + "┌─" + "─"*part[1] + f"─────────────────────" + "─"*part[2] + "─┐" + " "*part[3] + " ║") + "\n"
+            bloc += ("║ " + " "*part[0] + "│ " + " "*part[1] + f" Press enter to exit " + " "*part[2] + " │" + " "*part[3] + " ║") + "\n"
+            bloc += ("║ " + " "*part[0] + "└─" + "─"*part[1] + f"─────────────────────" + "─"*part[2] + "─┘" + " "*part[3] + " ║") + "\n"
+            bloc += ('╚' + '═'*(max_length - 2) + '╝')
+
+            _clear()
+            input(bloc)
+
+
+def _clear():
+    match os.name:
+        case 'posix':
+            os.system('clear')
+            print()
+        case 'nt':
+            os.system('cls')
+            print()
 
 
 if __name__ == '__main__':
-    keys = {
-        'help': "Show help.",
-        'edit <path>': "Edit config file",
-        'create <path>': "Create config file"
-    }
-    sys.argv = sys.argv[1:]
-    try:
-        cmd, sys.argv = sys.argv[0], sys.argv[1:]
-    except IndexError:
-        cmd = '_'
-
-    PATH = os.getcwd().replace('\\', '/')
-
-    if '-h' in sys.argv or '--help' in sys.argv:
-        help(cmd)
-    else:
-        match cmd:
-            case 'edit':
-                edit(sys.argv[0])
-            case 'view':
-                view(sys.argv[0])
-            case 'create':
-                if '-n' in sys.argv:
-                    name = sys.argv.pop(sys.argv.index('-n') + 1)
-                    sys.argv.pop(sys.argv.index('-n'))
-                elif '--name' in sys.argv:
-                    name = sys.argv.pop(sys.argv.index('--name') + 1)
-                    sys.argv.pop(sys.argv.index('--name'))
-                else:
-                    name = 'settings.py'
-
-                if '-f' in sys.argv:
-                    folder = sys.argv.pop(sys.argv.index('-f') + 1)
-                    sys.argv.pop(sys.argv.index('-f'))
-                elif '--folder' in sys.argv:
-                    folder = sys.argv.pop(sys.argv.index('--folder') + 1)
-                    sys.argv.pop(sys.argv.index('--folder'))
-                else:
-                    folder = os.getcwd().replace('\\', '/')
-
-                create(name, folder)
-
-            case _:
-                help()
+    MENU('settings' if len(sys.argv) < 1 else sys.argv[1]).run()
