@@ -20,7 +20,15 @@ class FILE:
                 return f'    _{self.name.upper()} = ({self.type}, "{self.value}")'
 
             def get_property(self):
-                return f"\n    @property\n    def {self.name.upper()}(self):\n        return self._{self.name.upper()}[0](self._{self.name.upper()}[1])\n"
+                return (
+                    f"\n"
+                    f"    @property\n"
+                    f"    def {self.name.upper()}(self):\n"
+                    f"        if self._{self.name.upper()}[0] == SecurityObject:\n"
+                    f"            return self._{self.name.upper()}[0](self._{self.name.upper()}[1]).data\n"
+                    f"        else:\n"
+                    f"            return self._{self.name.upper()}[0](self._{self.name.upper()}[1])\n"
+                )
 
         def __init__(self, data: str):
             self.data = '\n'.join(data.splitlines()[3:])
@@ -64,10 +72,6 @@ class FILE:
 
 
 class MENU:
-    class MODE(Enum):
-        EDIT = 0
-        VIEW = 1
-
     def __init__(self, file):
         """Execute Menu for file
 
@@ -133,7 +137,7 @@ class MENU:
                 case 2:
                     name = input('Enter the name: ')
                     type_ = input('Enter the type: ')
-                    if type_ == 'Secure':
+                    if type_.lower() == 'secure' or type_.lower() == 'securityobject':
                         type_ = 'SecurityObject'
                     value = input('Enter the value: ') if type_ != 'SecurityObject' else SecurityObject(input('Enter the value'), encrypt=True).encrypted_data
                     class_.attributes.append(FILE.CLASS.ATTR(f"{name} = ({type_}, \"{value}\")"))
@@ -149,6 +153,8 @@ class MENU:
                     if attr_.type == 'SecurityObject':
                         attr_.value = SecurityObject(attr_.value).data
                     attr_.type = input('Enter a type: ')
+                    if attr_.type.lower() == 'secure' or attr_.type.lower() == 'securityobject':
+                        attr_.type = 'SecurityObject'
                     if attr_.type == 'SecurityObject':
                         attr_.value = SecurityObject(attr_.value, encrypt=True)
                 case 3:
@@ -302,4 +308,4 @@ def _clear():
 
 
 if __name__ == '__main__':
-    MENU('settings' if len(sys.argv) < 1 else sys.argv[1]).run()
+    MENU('settings' if len(sys.argv) <= 1 else sys.argv[1]).run()
