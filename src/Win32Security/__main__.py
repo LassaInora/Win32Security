@@ -1,6 +1,5 @@
 import os
 import sys
-from enum import Enum
 
 import LassaLib
 
@@ -24,10 +23,7 @@ class FILE:
                     f"\n"
                     f"    @property\n"
                     f"    def {self.name.upper()}(self):\n"
-                    f"        if self._{self.name.upper()}[0] == SecurityObject:\n"
-                    f"            return self._{self.name.upper()}[0](self._{self.name.upper()}[1]).data\n"
-                    f"        else:\n"
-                    f"            return self._{self.name.upper()}[0](self._{self.name.upper()}[1])\n"
+                    f"        return _get_data(self._{self.name.upper()})\n"
                 )
 
         def __init__(self, data: str):
@@ -44,7 +40,11 @@ class FILE:
                 attrs = attr.get_set() + "\n" + attrs
                 attrs += attr.get_property()
 
-            return f'class {self.name}__:\n    """Settings of {self.name}"""\n\n' + attrs
+            return (
+                       f'class {self.name}__:\n'
+                       f'    """Settings of {self.name}"""\n'
+                       f'\n'
+                   ) + attrs
 
     def __init__(self, name: str):
         name = name.replace('\\', '/')
@@ -64,7 +64,18 @@ class FILE:
         return [self.CLASS('class ' + class_) for class_ in self.data.split('class ')[1:]]
 
     def __str__(self):
-        return "from Win32Security import SecurityObject\n\n\n" + '\n\n'.join(str(class_) for class_ in self.classes)
+        return (
+                "from Win32Security import SecurityObject\n"
+                "\n"
+                "\n"
+                "def _get_data(data):\n"
+                "    if data[0] == SecurityObject:\n"
+                "        return data[0](data[1]).data\n"
+                "    else:\n"
+                "        return data[0](data[1])\n"
+                "\n"
+                "\n"
+               ) + '\n\n'.join(str(class_) for class_ in self.classes)
 
     def save(self):
         open(self.path + self.name + '.py', 'w').write(str(self))

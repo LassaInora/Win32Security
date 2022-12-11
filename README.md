@@ -49,6 +49,12 @@ Version:
 
   ```python
     from Win32Security import *
+
+    def _get_data(data):
+        if data[0] == SecurityObject:
+          return data[0](data[1]).data
+        else:
+          return data[0](data[1])
     
     # <class>
     class YourClassName__:
@@ -58,16 +64,13 @@ Version:
         
         @property
         def YOURVARIABLENAME(self):
-            if isinstance(self._YOURVARIABLENAME[0], SecurityObject):
-              return self._YOURVARIABLENAME[0](self._YOURVARIABLENAME[1]).data
-            else:
-              return self._YOURVARIABLENAME[0](self._YOURVARIABLENAME[1])
+            return _get_data(self._YOURVARIABLENAME)
     # </class>
     
     
     # <class>
     class ClassExample__:
-        """Settings of YourSecondClassName"""
+        """Settings of ClassExample"""
         
         _DATA1 = (SecurityObject, "0a1b2c3d4e5f6g7h8i9j")  # Fake encrypted 'Banana'
         _DATA2 = (int, "42")
@@ -75,24 +78,15 @@ Version:
         
         @property
         def DATA3(self):
-            if isinstance(self._DATA3[0], SecurityObject):
-              return self._DATA3[0](self._DATA3[1]).data
-            else:
-              return self._DATA3[0](self._DATA3[1])
+            return _get_data(self._DATA3)
         
         @property
         def DATA2(self):
-            if isinstance(self._DATA2[0], SecurityObject):
-              return self._DATA2[0](self._DATA2[1]).data
-            else:
-              return self._DATA2[0](self._DATA2[1])
+            return _get_data(self._DATA2)
         
         @property
         def DATA1(self):
-            if isinstance(self._DATA1[0], SecurityObject):
-              return self._DATA1[0](self._DATA1[1]).data
-            else:
-              return self._DATA1[0](self._DATA1[1])
+            return _get_data(self._DATA1)
     # </class>
     
     ...
