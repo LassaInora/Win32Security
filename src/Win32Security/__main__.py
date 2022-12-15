@@ -59,6 +59,7 @@ class FILE:
         except FileNotFoundError:
             self.data = ''
         self.classes = self.get_classes()
+        self.locked = self.data.split('# <lock:')[1].split('>')[0] == 'True'
 
     def get_classes(self):
         return [self.CLASS('class ' + class_) for class_ in self.data.split('class ')[1:]]
@@ -66,6 +67,8 @@ class FILE:
     def __str__(self):
         return (
                 "from Win32Security import SecurityObject\n"
+                "\n"
+                f"# <lock:{self.locked}>\n"
                 "\n"
                 "\n"
                 "def _get_data(data):\n"
@@ -100,14 +103,19 @@ class MENU:
         while not self._exit:
             _clear()
             match LassaLib.menu(
-                ['VIEW', 'EDIT', 'DELETE'], f'{self.file.name} Home',
+                ['VIEW', 'LOCK / UNLOCK', 'EDIT', 'DELETE'], f'{self.file.name} Home',
                 can_back=True,
-                desc=f'{self.file.path}{self.file.name}.py'
+                desc=f'{self.file.path}{self.file.name}.py\nis\n{"LOCK" if self.file.locked else "UNLOCK"}'
             ):
                 case 0: self._exit = True
                 case 1: self.view()
-                case 2: self.edit()
-                case 3:
+                case 2:
+                    self.file.locked = not self.file.locked
+                    for class_ in self.file.classes:
+                        for attr_ in class_.attributes:
+                            self.set_var(attr_, type=attr_.type)
+                case 3: self.edit()
+                case 4:
                     _clear()
                     if LassaLib.menu(['YES', 'NO'], f'Delete {self.file.name}?') == 1 and os.path.exists(
                             f'{self.file.path}{self.file.name}.py'):
@@ -160,7 +168,7 @@ class MENU:
                         type_ = input('Enter the type: ')
                         if type_.lower() == 'secure' or type_.lower() == 'securityobject':
                             type_ = 'SecurityObject'
-                        value = input('Enter the value: ') if type_ != 'SecurityObject' else SecurityObject(input('Enter the value'), encrypt=True).encrypted_data
+                        value = input('Enter the value: ') if type_ != 'SecurityObject' or self.file.locked else SecurityObject(input('Enter the value'), encrypt=True).encrypted_data
                         class_.attributes.append(FILE.CLASS.ATTR(f"{name} = ({type_}, \"{value}\")"))
                     case 3: self.edit_attribute(class_)
 
@@ -170,23 +178,38 @@ class MENU:
             exit_edit_attribute = False
             while not exit_edit_attribute:
                 _clear()
-                match LassaLib.menu([f'Rename {attr_.name}', 'Change type', 'Change value'], f'Edit {class_.name}.{attr_.name}', can_back=True):
+                match LassaLib.menu(
+                    [f'Rename {attr_.name}', 'Change type', 'Change value', f'Delete {attr_.name}'],
+                    f'Edit {class_.name}.{attr_.name}', can_back=True
+                ):
                     case 0: exit_edit_attribute = True
-                    case 1: self.set_var(attr_, input('Choose a name: '), attr_.type, attr_.value)
-                    case 2: self.set_var(attr_, attr_.name, input('Enter a type: '), attr_.value)
-                    case 3: self.set_var(attr_, attr_.name, attr_.type, input('Enter the new value: '))
+                    case 1: self.set_var(attr_, name=input('Choose a name: '))
+                    case 2: self.set_var(attr_, type=input('Enter a type: '),)
+                    case 3: self.set_var(attr_, value=input('Enter the new value: '))
+                    case 4:
+                        _clear()
+                        if LassaLib.menu(['YES', 'NO'], f'Delete {class_.name}.{attr_.name}?') == 1:
+                            class_.attributes.remove(attr_)
+                        exit_edit_attribute = True
 
-    @classmethod
-    def set_var(cls, attr, name, type, value):
-        if type.lower() == 'secure' or type.lower() == 'securityobject':
-            type = 'SecurityObject'
+    def set_var(self, attr, *, name=None, type=None, value=None):
+        if name is not None:
+            attr.name = name
 
-        if type == 'SecurityObject':
-            value = SecurityObject(value, encrypt=True).encrypted_data
+        if type is not None or value is not None:
+            if attr.type == 'SecurityObject':
+                attr.value = SecurityObject(attr.value).data
 
-        attr.name = name
-        attr.type = type
-        attr.value = str(value)
+            if type is not None:
+                if type.lower() == 'secure' or type.lower() == 'securityobject':
+                    attr.type = 'SecurityObject'
+                else:
+                    attr.type = type
+
+            if attr.type == 'SecurityObject' and self.file.locked:
+                attr.value = SecurityObject(value if value is not None else attr.value, encrypt=True).encrypted_data
+            else:
+                attr.value = value if value is not None else attr.value
 
     def select_class(self):
         _clear()

@@ -12,7 +12,7 @@ License:
 
 Version:
 --------
-- `2.0.1`
+- `2.1.0`
 
 --------
 ## Summary
@@ -49,6 +49,8 @@ Version:
 
   ```python
     from Win32Security import *
+
+    # <lock:True>
 
 
     def _get_data(data):
@@ -103,5 +105,15 @@ If you use the SecurityObject class then the encrypted value in your file will b
   ```
 
   In order to create, modify or see your data it is advisable to refer to `python -m Win32Security`
+
+
+  To share the file to another computer you can unlock the file.
+
+   **/!\ Warning!** By unlocking the file all values so far encrypted will be decrypted!
+   A decrypted file is mentioned by the comment at the beginning of the file
+   ```python
+      # <lock:False>
+   ```
+   Please do not change this value manually as this may corrupt your file!
 
         
